@@ -5,7 +5,7 @@ from threading import Thread
 from PIL import ImageTk,Image
 import os
 import pickle
-
+###NEW COMMIT
 
 
 class WarningButton(Button):
@@ -101,10 +101,10 @@ HEADER_Search = 'SEARCH'
 HEADER_NonEx = 'SEARCH_NonEXIST'
 previously_contacted = []
 ###Backend###
-PORT =5051
-BUFSIZ = 1024
+PORT =5050
+BUFSIZ = 102
 cleint_socket = socket(AF_INET, SOCK_STREAM)
-cleint_socket.connect(('127.0.1.1', PORT))
+cleint_socket.connect(('192.168.0.104', PORT))
 
 '''def on_closing(event =None):
     cleint_socket.close()'''
@@ -156,20 +156,29 @@ class MessageSession:
     def get_head_node(self):
         return self.head_node
 
-    def insert_beginning(self,new_sent_msg = "nothing-first" , header = None,new_received_msg = None):
+    def insert_beginning(self,new_sent_msg =None , header = None,new_received_msg = None):
         new_node = Node(sent_msg = new_sent_msg, received_msg = new_received_msg, header = header)
         new_node.set_next_node(self.head_node)
         self.head_node = new_node
 
 
-    def add_new_msg(self, header , sent_msg= "nothingnew" , received_msg = None ):
+    def add_new_msg_sent(self, header = None , sent_msg= None  ):
         current_node = self.get_head_node()
-        for _ in previously_contacted:
+        for _ in range(len(previously_contacted)):
             if current_node.get_header() == header:
-                 current_node.append_to_list_received(received_msg)
                  current_node.append_to_list_sent(sent_msg)
             else:
                 current_node = current_node.get_next_node()
+                print('neep')
+
+    def add_new_msg_received(self, header=None, received_msg=None):
+        current_node = self.get_head_node()
+        for _ in range(len(previously_contacted)):
+            if current_node.get_header() == header:
+                current_node.append_to_list_received(received_msg)
+            else:
+                current_node = current_node.get_next_node()
+
 
     def show_latest_msg (self):
         current_node = self.get_head_node()
@@ -186,18 +195,22 @@ class MessageSession:
 
     def stringify_list_sent(self,header):
         current_node = self.get_head_node()
-        for i in range(len(previously_contacted)):
-            print(current_node.get_list_sent())
-            print("sent")
-            #current_node = current_node.get_next_node()
+        for _ in range(len(previously_contacted)):
+            if current_node.get_header() == header:
+                print(current_node.get_list_sent())
+            else:
+                current_node = current_node.get_next_node()
+                print('beep')
 
 
     def stringify_list_received(self,header):
         current_node = self.get_head_node()
-        for i in range(len(previously_contacted)):
-            print(current_node.get_list_received())
-            print("reveived")
-            #current_node = current_node.get_next_node()
+        for _ in range(len(previously_contacted)):
+            if current_node.get_header() == header:
+                print(current_node.get_list_received())
+            else:
+                current_node = current_node.get_next_node()
+                print("beep")
 
 
 def send_usernameANDpassword_atSignUp(event = None):
@@ -239,33 +252,33 @@ new_node = MessageSession()
 def sendMassage(event):
     if chat_entry.get() != '' :
         msg_sent = HEADER_msg+search_result_username.get('1.0', END)+chat_entry.get()
-        user_receiving = search_result_username.get('1.0', END)
+        user_receiving = search_result_username.get('1.0', END).replace('\n','')
         if not user_receiving in previously_contacted :
-            cleint_socket.send(bytes(msg_sent , 'utf8'))
+            previously_contacted.insert(0,user_receiving)
             new_node.insert_beginning(new_sent_msg=chat_entry.get(),header=user_receiving)
-            previously_contacted.insert(0,user_receiving)
-            new_node.stringify_list_sent(header=user_receiving)
-            #new_node.show_latest_msg()
-        else:
             cleint_socket.send(bytes(msg_sent , 'utf8'))
+            new_node.stringify_list_sent(header=user_receiving)
+            new_node.show_latest_msg()
+        else:
             previously_contacted.remove(user_receiving)
-            previously_contacted.insert(0,user_receiving)
-            new_node.add_new_msg(header= user_receiving,sent_msg=chat_entry.get())
+            previously_contacted.insert(0, user_receiving)
+            new_node.add_new_msg_sent(header= user_receiving,sent_msg=chat_entry.get())
+            cleint_socket.send(bytes(msg_sent , 'utf8'))
             new_node.stringify_list_sent(header=user_receiving)
             #new_node.show_latest_msg()
         chat_entry.delete(0, END)
 
 
 def receiveMassage(sender, new_msg):
-    if not sender in previously_contacted:
-        new_node.insert_beginning(header = sender ,new_received_msg  =new_msg)
+    if  sender not in previously_contacted:
         previously_contacted.insert(0, sender)
+        new_node.insert_beginning(header = sender ,new_received_msg  =new_msg)
         new_node.stringify_list_received(header=sender)
     else:
         previously_contacted.remove(sender)
         previously_contacted.insert(0, sender)
-        new_node.add_new_msg(header=sender, received_msg=new_msg)
-        #new_node.stringify_list_received(header=sender)
+        new_node.add_new_msg_received(header=sender, received_msg=new_msg)
+        new_node.stringify_list_received(header=sender)
 
 
 #***Cleint Front end***#
@@ -304,7 +317,7 @@ class Ebox(Entry):
 
 main_window = Canvas (top, width=600,bg='#C8D3D5',height=800,bd=0, highlightthickness=0, relief='ridge')
 #Images
-Image_Path ="/home/almaliki565/PycharmProjects/Chatapp/venv/Icones folder/"
+Image_Path ="/home/almaliki565/PycharmProjects/Chatapp/venv/Icones-folder/"
 search_image = Image.open(os.path.join(Image_Path,"Search.png"))
 search_photo = ImageTk.PhotoImage(search_image)
 left_arrow_image = Image.open(os.path.join(Image_Path,"LeftArrow.png"))
@@ -440,10 +453,11 @@ def receiving_warnings():
     while True:
         warning_msg = cleint_socket.recv(BUFSIZ).decode("utf8")
         if warning_msg.startswith(HEADER_msg):
+            #print(warning_msg)
             warning_msg = warning_msg.replace(HEADER_msg, '')
             msg_obtained = warning_msg.split(HEADER_REC)
-            #if  msg_obtained[0] != username_signup_stringvar.get().strip()  and msg_obtained[0] != username_stringvar.get():
-            receiveMassage(sender=msg_obtained[0],new_msg=msg_obtained[1])
+            if  msg_obtained[0] != username_signup_stringvar.get().strip()  and msg_obtained[0] != username_stringvar.get():
+                receiveMassage(sender=msg_obtained[0],new_msg=msg_obtained[1])
 
         if warning_msg.startswith(HEADER_already_exist):
             fullname.configure(state=DISABLED)

@@ -1,8 +1,6 @@
 from socket import AF_INET,socket,SOCK_STREAM , gethostname, gethostbyname
 from threading import Thread
-import pandas as pd
-import time
-import pickle
+
 HOST_NAME = gethostname()
 IP = gethostbyname(HOST_NAME)
 print(IP)
@@ -16,8 +14,7 @@ HEADER_msg ='MSG'
 HEADER_REC = 'REC'
 HEADER_Search = 'SEARCH'
 HEADER_NonEx = 'SEARCH_NonEXIST'
-
-ADDR = (IP, PORT)
+ADDR = ('', PORT)
 clients = {}
 addresses = {}
 usernames = {}
@@ -26,15 +23,14 @@ fullnames = []
 list_of_existing_usernames =[]
 Server = socket(AF_INET, SOCK_STREAM)
 Server.bind(ADDR)
-
+# new commit
 def accept_incoming_connections():
     """Sets up handling for incoming clients."""
     while True:
         global Server
         client, client_address = Server.accept()
-        if not client in addresses.keys():
-             addresses[client] = client_address
-        Thread(target=handle_client, args=(client,client_address,)).start()
+        addresses[client] = client_address
+        Thread(target=handle_client, args=(client, )).start()
 
 def sendAndReceive(client,sender):
     while True:
@@ -56,12 +52,10 @@ def sendAndReceive(client,sender):
             if not sender == receiver_of_msg:
                 for key  in clients.keys() :
                     if receiver_of_msg in clients[key]:
-                        key.sendall(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
-            else:
-                 client.sendall(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
+                        key.send(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
 
 
-def handle_client(client,client_address):  # Takes client socket as argument.
+def handle_client(client):  # Takes client socket as argument.
     """Handles a single client connection."""
     while True:
         info_received = client.recv(BUFSIZ).decode("utf8").split('||')
@@ -77,6 +71,7 @@ def handle_client(client,client_address):  # Takes client socket as argument.
                     list_of_existing_usernames.append(username_recieved.replace(HEADER_SignUp,""))
                     client.send(bytes(HEADER_Start, "utf8"))
                     sendAndReceive(client, username_recieved.replace(HEADER_SignUp, ""))
+
 
              elif str(username_recieved.replace(HEADER_SignUp,"")) in  usernames.keys():
                  client.send(bytes(HEADER_already_exist,"utf8"))
