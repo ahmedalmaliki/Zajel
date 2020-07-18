@@ -29,33 +29,13 @@ def accept_incoming_connections():
     while True:
         global Server
         client, client_address = Server.accept()
+        client_IP= client.recv(BUFSIZ).decode("utf8")
         addresses[client] = client_address
-        Thread(target=handle_client, args=(client, )).start()
+        Thread(target=handle_client, args=(client,client_IP )).start()
 
-'''def sendAndReceive(client,sender):
-    while True:
-        msg = client.recv(BUFSIZ).decode("utf8")
-        if msg.startswith(HEADER_Search):
-            msg = msg.replace(HEADER_Search,'')
-            if msg in list_of_existing_usernames:
-               client.send(bytes(HEADER_Search+usernames[msg][1]+'||'+msg, "utf8"))
 
-            else:
-               client.send(bytes(HEADER_NonEx, "utf8"))
-              #  continue
 
-        elif msg.startswith(HEADER_msg):
-            full_msg = msg.replace(HEADER_msg, '')
-            msg_obtained = full_msg.split('\n')
-            receiver_of_msg = msg_obtained[0]
-            content_of_msg = msg_obtained[1]
-            if not sender == receiver_of_msg:
-                for key  in clients.keys() :
-                    if receiver_of_msg in clients[key]:
-                        key.send(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
-'''
-
-def handle_client(client):
+def handle_client(client,client_IP ):
     sender =''
     while True:
         msg = client.recv(BUFSIZ).decode("utf8")
