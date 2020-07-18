@@ -32,7 +32,7 @@ def accept_incoming_connections():
         addresses[client] = client_address
         Thread(target=handle_client, args=(client, )).start()
 
-def sendAndReceive(client,sender):
+'''def sendAndReceive(client,sender):
     while True:
         msg = client.recv(BUFSIZ).decode("utf8")
         if msg.startswith(HEADER_Search):
@@ -53,36 +53,55 @@ def sendAndReceive(client,sender):
                 for key  in clients.keys() :
                     if receiver_of_msg in clients[key]:
                         key.send(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
+'''
 
-
-def handle_client(client):  # Takes client socket as argument.
-    """Handles a single client connection."""
+def handle_client(client):
+    sender =''
     while True:
-        info_received = client.recv(BUFSIZ).decode("utf8").split('||')
-        username_recieved = info_received[0]
-        password_recieved = info_received[1]
-        if  str(username_recieved).startswith(HEADER_SignUp) and str(password_recieved).startswith(HEADER_SignUp) :
-             if  str(username_recieved.replace(HEADER_SignUp,"")) not in usernames.keys():
-                    fullname_received = info_received[2]
-                    passwords.append(password_recieved.replace(HEADER_SignUp,""))
-                    fullnames.append(fullname_received.replace(HEADER_SignUp,""))
-                    usernames[username_recieved.replace(HEADER_SignUp,"")] = list(zip(passwords,fullnames))[-1]
-                    clients[client] = usernames
-                    list_of_existing_usernames.append(username_recieved.replace(HEADER_SignUp,""))
-                    client.send(bytes(HEADER_Start, "utf8"))
-                    sendAndReceive(client, username_recieved.replace(HEADER_SignUp, ""))
+        msg = client.recv(BUFSIZ).decode("utf8")
+        if msg.startswith(HEADER_SignUp):
+            info_received = msg.split('||')
+            username_recieved = info_received[0].replace(HEADER_SignUp,"")
+            password_recieved = info_received[1].replace(HEADER_SignUp,"")
+            sender = username_recieved
+            if username_recieved not in usernames.keys():
+               fullname_received = info_received[2].replace(HEADER_SignUp,"")
+               passwords.append(password_recieved)
+               fullnames.append(fullname_received)
+               usernames[username_recieved] = list(zip(passwords,fullnames))[-1]
+               clients[client] = usernames
+               list_of_existing_usernames.append(username_recieved)
+               client.send(bytes(HEADER_Start, "utf8"))
+            elif username_recieved in usernames.keys():
+                client.send(bytes(HEADER_already_exist, "utf8"))
 
-
-             elif str(username_recieved.replace(HEADER_SignUp,"")) in  usernames.keys():
-                 client.send(bytes(HEADER_already_exist,"utf8"))
-
-
-        elif str(username_recieved).startswith(HEADER_SignIn) and str(password_recieved).startswith(HEADER_SignIn) :
-            if (username_recieved.replace(HEADER_SignIn,"") not in usernames.keys()) or (password_recieved.replace(HEADER_SignIn,"") not in usernames[username_recieved.replace(HEADER_SignIn,"")][0]):
+        elif msg.startswith(HEADER_SignIn) :
+            info_received = msg.split('||')
+            username_recieved = info_received[0].replace(HEADER_SignIn, "")
+            password_recieved = info_received[1].replace(HEADER_SignIn, "")
+            sender = username_recieved
+            if (username_recieved not in usernames.keys()) or (password_recieved not in usernames[username_recieved][0]):
                 client.send(bytes(HEADER_SignIn, "utf8"))
             else :
                 client.send(bytes(HEADER_Start, "utf8"))
-                sendAndReceive(client,username_recieved.replace(HEADER_SignIn,""))
+
+        elif  msg.startswith(HEADER_Search):
+            msg = msg.replace(HEADER_Search,'')
+            if msg in list_of_existing_usernames:
+               client.send(bytes(HEADER_Search+usernames[msg][1]+'||'+msg, "utf8"))
+
+            else:
+               client.send(bytes(HEADER_NonEx, "utf8"))
+              #  continue
+        elif msg.startswith(HEADER_msg):
+            full_msg = msg.replace(HEADER_msg, '')
+            msg_obtained = full_msg.split('\n')
+            receiver_of_msg = msg_obtained[0]
+            content_of_msg = msg_obtained[1]
+            if   sender != receiver_of_msg:
+                for key  in clients.keys() :
+                    if receiver_of_msg in clients[key]:
+                        key.send(bytes(HEADER_msg + sender + HEADER_REC + content_of_msg, "utf8"))
 
 
 
