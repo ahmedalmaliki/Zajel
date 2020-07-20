@@ -5,7 +5,7 @@ from threading import Thread
 from PIL import ImageTk,Image
 import os
 import pickle
-###NEW COMMIT
+###NEW COMMIT_2222
 
 
 class WarningButton(Button):
@@ -88,9 +88,6 @@ class ChatCanvasButtons(Button):
 
 
 
-
-
-
 HEADER_SignUp = 'SIGNUP'
 HEADER_already_exist = 'AlreadyExist'
 HEADER_SignIn = 'SIGNIN'
@@ -104,10 +101,10 @@ previously_contacted = []
 PORT =5050
 BUFSIZ = 102
 cleint_socket = socket(AF_INET, SOCK_STREAM)
-cleint_socket.connect(('192.168.0.104', PORT))
+cleint_socket.connect(('192.168.0.102', PORT))
 
-'''def on_closing(event =None):
-    cleint_socket.close()'''
+#def on_closing(event =None):
+#    cleint_socket.send(bytes('Quit', 'utf8'))
 
 
 class Node:
@@ -150,7 +147,7 @@ class Node:
 
 
 class MessageSession:
-    def __init__(self, sent_msg = "nothing",received_msg =None,header = None):
+    def __init__(self, sent_msg = None,received_msg =None,header = None):
         self.head_node = Node(sent_msg,received_msg,header)
 
     def get_head_node(self):
@@ -200,7 +197,7 @@ class MessageSession:
                 print(current_node.get_list_sent())
             else:
                 current_node = current_node.get_next_node()
-                print('beep')
+
 
 
     def stringify_list_received(self,header):
@@ -294,9 +291,6 @@ FontOfChatBar = tkinter.font.Font(family="Calibri",size=25)
 
 #top.protocol("WM_DELETE_WINDOW", on_closing)
 
-#FontOFLabelsText = tkinter.font.Font()
-#The sign in Canves
-###Here is the Entry Box for the sign in and sign up pages###
 
 class Ebox(Entry):
     def __init__(self,default_text='',master=None, *args, **kwags):
@@ -453,7 +447,6 @@ def receiving_warnings():
     while True:
         warning_msg = cleint_socket.recv(BUFSIZ).decode("utf8")
         if warning_msg.startswith(HEADER_msg):
-            #print(warning_msg)
             warning_msg = warning_msg.replace(HEADER_msg, '')
             msg_obtained = warning_msg.split(HEADER_REC)
             if  msg_obtained[0] != username_signup_stringvar.get().strip()  and msg_obtained[0] != username_stringvar.get():
