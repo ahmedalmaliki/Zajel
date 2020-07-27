@@ -24,7 +24,7 @@ list_of_existing_usernames =[]
 Server = socket(AF_INET, SOCK_STREAM)
 Server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 Server.bind(ADDR)
-# new commit_2222
+# new commit_3333
 def accept_incoming_connections():
     """Sets up handling for incoming clients."""
     while True:
@@ -62,7 +62,7 @@ def handle_client(client):
             else :
                 client.send(bytes(HEADER_Start, "utf8"))
                 clients[username_recieved] = client
-
+                print(clients)
 
         elif  msg.startswith(HEADER_Search):
             msg = msg.replace(HEADER_Search,'')

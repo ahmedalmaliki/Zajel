@@ -5,7 +5,33 @@ from threading import Thread
 from PIL import ImageTk,Image
 import os
 import pickle
-###NEW COMMIT_2222
+###NEW COMMIT_3333
+HEADER_SignUp = 'SIGNUP'
+HEADER_already_exist = 'AlreadyExist'
+HEADER_SignIn = 'SIGNIN'
+HEADER_Start = 'START'
+HEADER_msg ='MSG'
+HEADER_REC = 'REC'
+HEADER_Search = 'SEARCH'
+HEADER_NonEx = 'SEARCH_NonEXIST'
+Image_Path ="/home/almaliki565/PycharmProjects/Chatapp/venv/Icones-folder/"
+previously_contacted = []
+
+PORT =5050
+BUFSIZ = 102
+cleint_socket = socket(AF_INET, SOCK_STREAM)
+cleint_socket.connect(('192.168.0.106', PORT))
+
+top = Tk()
+top.title("Zajel")
+top.geometry("600x600")
+top.configure(bg='#C8D3D5' )
+FontOfEntryList= tkinter.font.Font(family="Calibri",size=18)
+FontOfSearchResult_Fullname = tkinter.font.Font(family="Calibri",size=22)
+FontOfSearchResult_Username = tkinter.font.Font(family="Calibri",size=12)
+FontOfSearchBox= tkinter.font.Font(family="Calibri",size=14)
+FontOfMessages = tkinter.font.Font(family="Calibri",size=20)
+FontOfChatBar = tkinter.font.Font(family="Calibri",size=25)
 
 
 class WarningButton(Button):
@@ -85,59 +111,64 @@ class ChatCanvasButtons(Button):
         search_button.bind('<Button-1>', search_button.revealLeftArrowAndSearchBar)
         searchBox.bind('<KeyRelease>', sendSearchInput)
         left_arrow_button.bind('<Button-1>', left_arrow_button.removeLeftArrowAndSarchBar)
+        chat_entry.delete(0, END)
 
 
 
-HEADER_SignUp = 'SIGNUP'
-HEADER_already_exist = 'AlreadyExist'
-HEADER_SignIn = 'SIGNIN'
-HEADER_Start = 'START'
-HEADER_msg ='MSG'
-HEADER_REC = 'REC'
-HEADER_Search = 'SEARCH'
-HEADER_NonEx = 'SEARCH_NonEXIST'
-previously_contacted = []
-###Backend###
-PORT =5050
-BUFSIZ = 102
-cleint_socket = socket(AF_INET, SOCK_STREAM)
-cleint_socket.connect(('192.168.0.102', PORT))
+#Images
+Image_Path ="/home/almaliki565/PycharmProjects/Chatapp/venv/Icones-folder/"
+search_image = Image.open(os.path.join(Image_Path,"Search.png"))
+search_photo = ImageTk.PhotoImage(search_image)
+left_arrow_image = Image.open(os.path.join(Image_Path,"LeftArrow.png"))
+left_arrow_photo= ImageTk.PhotoImage(left_arrow_image)
+bar_image = Image.open(os.path.join(Image_Path,"bar.png"))
+bar_photo =  ImageTk.PhotoImage(bar_image)
+###
 
-#def on_closing(event =None):
-#    cleint_socket.send(bytes('Quit', 'utf8'))
+
+
+###Chat Canvas###
+chat_window = Canvas (top, width=600,bg='#C8D3D5',height=800,bd=0, highlightthickness=0, relief='ridge')
+chat_entry_image = Image.open(os.path.join(Image_Path,"chat_bar.png"))
+chat_entry_photo = ImageTk.PhotoImage(chat_entry_image)
+send_image = Image.open(os.path.join(Image_Path,"send.png"))
+send_photo = ImageTk.PhotoImage(send_image)
+send_button = ChatCanvasButtons(master=chat_window,image=send_photo,bg="#C8D3D5",activebackground="#C8D3D5",  highlightthickness=0, relief='flat')
+chat_entry_label = Label(chat_window,image=chat_entry_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
+bar_label_chat =  Label( chat_window,image=bar_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
+left_arrow_button_chat = ChatCanvasButtons(master=bar_label_chat,bg="#6E8387",  highlightthickness=0, relief='flat',activebackground="#6E8387",image=left_arrow_photo)
+fullname_chat = Text(bar_label_chat, height=1, width=50,bg ="#6E8387",font = FontOfChatBar, highlightthickness=0,
+                              relief='ridge', bd=0)
+chat_entry = Entry(chat_entry_label,font =FontOfEntryList,relief=FLAT,highlightthickness=0)
 
 
 class Node:
-    def __init__(self,header,sent_msg,received_msg,next_node=None):
-        self.sent_msg = sent_msg
-        self.received_msg = received_msg
+    def __init__(self,header,msg,next_node=None):
+        self.msg = msg
         self.header = header
         self.next_node = next_node
-        self.list_sent =[]
-        self.list_sent.append(self.sent_msg)
-        self.list_received = []
-        self.list_received.append(self.received_msg)
-        self.grid_cord_available = (0.1,0.5)
-    def get_list_sent(self):
-        return self.list_sent
+        self.msgs_list =[]
+        self.msgs_list.append(self.msg)
+        self.msg_labels = []
 
-    def get_grid_cord_available(self):
-        return self.grid_cord_available
-
-    def reset_grid_cord_available(self, x, y):
-        self.grid_cord_available  = (x, y)
-
-    def get_list_received(self):
-        return self.list_received
+    def get_msgs_list(self):
+        return self.msgs_list
 
     def get_header(self):
         return self.header
 
-    def append_to_list_sent(self, sent_msg):
-        self.list_sent.insert(0,sent_msg)
+    def append_to_msgs_list(self, msg):
+        self.msgs_list.insert(0,msg)
 
-    def append_to_list_received(self,received_msg):
-        self.list_received.insert(0,received_msg)
+    def append_to_msg_labels(self,label):
+        self.msg_labels.insert(0, label)
+
+
+    def clear_msg_labels(self):
+        self.msg_labels.clear()
+
+    def get_msg_labels(self):
+        return self.msg_labels
 
     def get_next_node(self):
         return self.next_node
@@ -146,68 +177,70 @@ class Node:
         self.next_node = next_node
 
 
+
+
 class MessageSession:
-    def __init__(self, sent_msg = None,received_msg =None,header = None):
-        self.head_node = Node(sent_msg,received_msg,header)
+    def __init__(self, msg = None,header = None):
+        self.head_node = Node(msg,header)
 
     def get_head_node(self):
         return self.head_node
 
-    def insert_beginning(self,new_sent_msg =None , header = None,new_received_msg = None):
-        new_node = Node(sent_msg = new_sent_msg, received_msg = new_received_msg, header = header)
+    def insert_beginning(self,msg =None , header = None):
+        new_node = Node(msg = msg,  header = header)
         new_node.set_next_node(self.head_node)
         self.head_node = new_node
 
 
-    def add_new_msg_sent(self, header = None , sent_msg= None  ):
+    def add_new_msg(self, header = None , new_msg= None  ):
         current_node = self.get_head_node()
         for _ in range(len(previously_contacted)):
             if current_node.get_header() == header:
-                 current_node.append_to_list_sent(sent_msg)
+                 current_node.append_to_msgs_list(new_msg)
             else:
                 current_node = current_node.get_next_node()
                 print('neep')
 
-    def add_new_msg_received(self, header=None, received_msg=None):
+
+
+    def showMessages (self,username):
+        y=0.8
+        current_node = self.get_head_node()
+        for _ in range(len(previously_contacted)):
+            if current_node.get_header() == username:
+                for i in current_node.get_msg_labels():
+                    i.place_forget()
+                for i in current_node.get_msgs_list():
+                    if i.startswith('0'):
+                        i = i.replace('0','',1)
+                        msg_Label = Label(chat_window,bg = 'white', text= i, font = FontOfMessages )
+                        msg_Label.place(rely = y ,relx = 0.99 - (msg_Label.winfo_reqwidth() / 60) * 0.1)
+                        current_node.append_to_msg_labels(msg_Label)
+                        y -= 0.05
+                    else:
+                        i = i.replace('1', '', 1)
+                        msg_Label = Label(chat_window,bg = 'white', text= i, font = FontOfMessages )
+                        msg_Label.place(rely = y ,relx = 0.01)
+                        current_node.append_to_msg_labels(msg_Label)
+                        y -= 0.05
+
+
+
+
+
+
+    def stringify_list(self,header):
         current_node = self.get_head_node()
         for _ in range(len(previously_contacted)):
             if current_node.get_header() == header:
-                current_node.append_to_list_received(received_msg)
+                print(current_node.get_msgs_list())
             else:
                 current_node = current_node.get_next_node()
-
-
-    def show_latest_msg (self):
-        current_node = self.get_head_node()
-        current_node.reset_grid_cord_available(x=0.1, y=0.5 )
-        for _ in range(len(previously_contacted)):
-            if current_node.get_header() == search_result_username.get('1.0', END):
-                for i in current_node.get_list_sent():
-                    X, Y = current_node.get_grid_cord_available()
-                    msg_label = Label(chat_window ,text = i)
-                    msg_label.propagate = 1
-                    msg_label.place(relx = X ,rely = Y)
-                    current_node.reset_grid_cord_available(x=X , y=Y - 0.03)
-
-
-    def stringify_list_sent(self,header):
-        current_node = self.get_head_node()
-        for _ in range(len(previously_contacted)):
-            if current_node.get_header() == header:
-                print(current_node.get_list_sent())
-            else:
-                current_node = current_node.get_next_node()
+                print('beep')
 
 
 
-    def stringify_list_received(self,header):
-        current_node = self.get_head_node()
-        for _ in range(len(previously_contacted)):
-            if current_node.get_header() == header:
-                print(current_node.get_list_received())
-            else:
-                current_node = current_node.get_next_node()
-                print("beep")
+
 
 
 def send_usernameANDpassword_atSignUp(event = None):
@@ -252,44 +285,34 @@ def sendMassage(event):
         user_receiving = search_result_username.get('1.0', END).replace('\n','')
         if not user_receiving in previously_contacted :
             previously_contacted.insert(0,user_receiving)
-            new_node.insert_beginning(new_sent_msg=chat_entry.get(),header=user_receiving)
+            new_node.insert_beginning(msg='0'+chat_entry.get(),header=user_receiving)
             cleint_socket.send(bytes(msg_sent , 'utf8'))
-            new_node.stringify_list_sent(header=user_receiving)
-            new_node.show_latest_msg()
+            new_node.stringify_list(header=user_receiving)
+            new_node.showMessages(username = user_receiving)
         else:
             previously_contacted.remove(user_receiving)
             previously_contacted.insert(0, user_receiving)
-            new_node.add_new_msg_sent(header= user_receiving,sent_msg=chat_entry.get())
+            new_node.add_new_msg(header= user_receiving,new_msg='0'+chat_entry.get())
             cleint_socket.send(bytes(msg_sent , 'utf8'))
-            new_node.stringify_list_sent(header=user_receiving)
-            #new_node.show_latest_msg()
+            new_node.stringify_list(header=user_receiving)
+            new_node.showMessages(username =user_receiving)
         chat_entry.delete(0, END)
 
 
 def receiveMassage(sender, new_msg):
     if  sender not in previously_contacted:
         previously_contacted.insert(0, sender)
-        new_node.insert_beginning(header = sender ,new_received_msg  =new_msg)
-        new_node.stringify_list_received(header=sender)
+        new_node.insert_beginning(header = sender ,msg ='1'+new_msg)
+        new_node.stringify_list(header=sender)
+        new_node.showMessages(username = sender)
     else:
         previously_contacted.remove(sender)
         previously_contacted.insert(0, sender)
-        new_node.add_new_msg_received(header=sender, received_msg=new_msg)
-        new_node.stringify_list_received(header=sender)
+        new_node.add_new_msg(header=sender, new_msg= '1'+new_msg)
+        new_node.stringify_list(header=sender)
+        new_node.showMessages(username = sender)
 
 
-#***Cleint Front end***#
-top = Tk()
-top.title("Zajel")
-top.geometry("600x600")
-top.configure(bg='#C8D3D5' )
-FontOfEntryList= tkinter.font.Font(family="Calibri",size=18)
-FontOfSearchResult_Fullname = tkinter.font.Font(family="Calibri",size=22)
-FontOfSearchResult_Username = tkinter.font.Font(family="Calibri",size=12)
-FontOfSearchBox= tkinter.font.Font(family="Calibri",size=14)
-FontOfChatBar = tkinter.font.Font(family="Calibri",size=25)
-
-#top.protocol("WM_DELETE_WINDOW", on_closing)
 
 
 class Ebox(Entry):
@@ -310,15 +333,6 @@ class Ebox(Entry):
 
 
 main_window = Canvas (top, width=600,bg='#C8D3D5',height=800,bd=0, highlightthickness=0, relief='ridge')
-#Images
-Image_Path ="/home/almaliki565/PycharmProjects/Chatapp/venv/Icones-folder/"
-search_image = Image.open(os.path.join(Image_Path,"Search.png"))
-search_photo = ImageTk.PhotoImage(search_image)
-left_arrow_image = Image.open(os.path.join(Image_Path,"LeftArrow.png"))
-left_arrow_photo= ImageTk.PhotoImage(left_arrow_image)
-bar_image = Image.open(os.path.join(Image_Path,"bar.png"))
-bar_photo =  ImageTk.PhotoImage(bar_image)
-###
 bar_label = Label( main_window,image=bar_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
 search_button = MainCanvasButtons(master=bar_label,image=search_photo,bg="#6E8387",activebackground="#6E8387",  highlightthickness=0, relief='flat')
 left_arrow_button = MainCanvasButtons(master=bar_label,bg="#6E8387",  highlightthickness=0, relief='flat',activebackground="#6E8387",image=left_arrow_photo)
@@ -346,19 +360,7 @@ def creatMainWindow():
     searchBox.bind('<KeyRelease>',sendSearchInput)
     left_arrow_button.bind('<Button-1>',left_arrow_button.removeLeftArrowAndSarchBar)
 
-###Chat Canvas###
-chat_window = Canvas (top, width=600,bg='#C8D3D5',height=800,bd=0, highlightthickness=0, relief='ridge')
-chat_entry_image = Image.open(os.path.join(Image_Path,"chat_bar.png"))
-chat_entry_photo = ImageTk.PhotoImage(chat_entry_image)
-send_image = Image.open(os.path.join(Image_Path,"send.png"))
-send_photo = ImageTk.PhotoImage(send_image)
-send_button = ChatCanvasButtons(master=chat_window,image=send_photo,bg="#C8D3D5",activebackground="#C8D3D5",  highlightthickness=0, relief='flat')
-chat_entry_label = Label(chat_window,image=chat_entry_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
-bar_label_chat =  Label( chat_window,image=bar_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
-left_arrow_button_chat = ChatCanvasButtons(master=bar_label_chat,bg="#6E8387",  highlightthickness=0, relief='flat',activebackground="#6E8387",image=left_arrow_photo)
-fullname_chat = Text(bar_label_chat, height=1, width=50,bg ="#6E8387",font = FontOfChatBar, highlightthickness=0,
-                              relief='ridge', bd=0)
-chat_entry = Entry(chat_entry_label,font =FontOfEntryList,relief=FLAT,highlightthickness=0)
+
 def creatChatWindow(event):
     search_result_username.delete('1.0', END)
     search_result_fullname.delete('1.0', END)
