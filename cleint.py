@@ -20,18 +20,18 @@ previously_contacted = []
 PORT =5050
 BUFSIZ = 102
 cleint_socket = socket(AF_INET, SOCK_STREAM)
-cleint_socket.connect(('192.168.0.106', PORT))
+cleint_socket.connect(('127.0.1.1', PORT))
 
 top = Tk()
 top.title("Zajel")
 top.geometry("600x600")
 top.configure(bg='#C8D3D5' )
-FontOfEntryList= tkinter.font.Font(family="Calibri",size=18)
-FontOfSearchResult_Fullname = tkinter.font.Font(family="Calibri",size=22)
-FontOfSearchResult_Username = tkinter.font.Font(family="Calibri",size=12)
-FontOfSearchBox= tkinter.font.Font(family="Calibri",size=14)
-FontOfMessages = tkinter.font.Font(family="Calibri",size=20)
-FontOfChatBar = tkinter.font.Font(family="Calibri",size=25)
+FontOfEntryList= tkinter.font.Font(family="Times",size=18)
+FontOfSearchResult_Fullname = tkinter.font.Font(family="Times",size=22)
+FontOfSearchResult_Username = tkinter.font.Font(family="Times",size=12)
+FontOfSearchBox= tkinter.font.Font(family="Times",size=14)
+FontOfMessages = tkinter.font.Font(family="Times",size=20)
+FontOfChatBar = tkinter.font.Font(family="Times",size=25)
 
 
 class WarningButton(Button):
@@ -103,6 +103,7 @@ class ChatCanvasButtons(Button):
         self.configure(bd=0, highlightthickness=0, relief='ridge')
     def returnToMainWindow(self,event):
         chat_window.pack_forget()
+        bar_label_chat.pack_forget()
         top.geometry("600x800")
         main_window.propagate(0)
         main_window.pack()
@@ -128,14 +129,14 @@ bar_photo =  ImageTk.PhotoImage(bar_image)
 
 
 ###Chat Canvas###
-chat_window = Canvas (top, width=600,bg='#C8D3D5',height=800,bd=0, highlightthickness=0, relief='ridge')
+chat_window = Canvas (top, width=600,bg='#f1faee',height=730,bd=0, highlightthickness=0, relief='ridge')
 chat_entry_image = Image.open(os.path.join(Image_Path,"chat_bar.png"))
 chat_entry_photo = ImageTk.PhotoImage(chat_entry_image)
 send_image = Image.open(os.path.join(Image_Path,"send.png"))
 send_photo = ImageTk.PhotoImage(send_image)
-send_button = ChatCanvasButtons(master=chat_window,image=send_photo,bg="#C8D3D5",activebackground="#C8D3D5",  highlightthickness=0, relief='flat')
-chat_entry_label = Label(chat_window,image=chat_entry_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
-bar_label_chat =  Label( chat_window,image=bar_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
+send_button = ChatCanvasButtons(master=chat_window,image=send_photo,bg="#f1faee",activebackground="#f1faee",  highlightthickness=0, relief='flat')
+chat_entry_label = Label(chat_window,image=chat_entry_photo,bd = 0,bg ='#f1faee',activebackground="#f1faee", highlightthickness=0, relief='flat')
+bar_label_chat =  Label( top,image=bar_photo,bd = 0,bg ="#6E8387", highlightthickness=0, relief='flat')
 left_arrow_button_chat = ChatCanvasButtons(master=bar_label_chat,bg="#6E8387",  highlightthickness=0, relief='flat',activebackground="#6E8387",image=left_arrow_photo)
 fullname_chat = Text(bar_label_chat, height=1, width=50,bg ="#6E8387",font = FontOfChatBar, highlightthickness=0,
                               relief='ridge', bd=0)
@@ -177,8 +178,6 @@ class Node:
         self.next_node = next_node
 
 
-
-
 class MessageSession:
     def __init__(self, msg = None,header = None):
         self.head_node = Node(msg,header)
@@ -202,44 +201,47 @@ class MessageSession:
                 print('neep')
 
 
-
     def showMessages (self,username):
-        y=0.8
+        y= 630
+        scrollable_region =730
+        window_height = 630
         current_node = self.get_head_node()
         for _ in range(len(previously_contacted)):
             if current_node.get_header() == username:
                 for i in current_node.get_msg_labels():
-                    i.place_forget()
+                    i.destroy()
                 for i in current_node.get_msgs_list():
                     if i.startswith('0'):
                         i = i.replace('0','',1)
-                        msg_Label = Label(chat_window,bg = 'white', text= i, font = FontOfMessages )
-                        msg_Label.place(rely = y ,relx = 0.99 - (msg_Label.winfo_reqwidth() / 60) * 0.1)
+                        msg_Label = Label(chat_window,bg = '#457b9d', text= i, font = FontOfMessages,
+                                            padx =5, pady =5, relief = FLAT, wraplength =300 , justify = LEFT)
                         current_node.append_to_msg_labels(msg_Label)
-                        y -= 0.05
+                        window_height -= msg_Label.winfo_reqheight() + 20
+                        if  window_height < 0:
+                            scrollable_region -= msg_Label.winfo_reqheight()
+                        chat_window.configure(scrollregion= (0,0, 0, scrollable_region))
+                        chat_window.create_window( (580 - msg_Label.winfo_reqwidth(),
+                                                   y - msg_Label.winfo_reqheight()),
+                                                  window=msg_Label, anchor='nw')
+                        y -=  msg_Label.winfo_reqheight() + 20
+
+
+
+
+
                     else:
                         i = i.replace('1', '', 1)
-                        msg_Label = Label(chat_window,bg = 'white', text= i, font = FontOfMessages )
-                        msg_Label.place(rely = y ,relx = 0.01)
+                        msg_Label = Label(chat_window,bg = 'white', text= i, font = FontOfMessages,
+                                            padx =5, pady =5, relief = FLAT, wraplength =300 , justify = LEFT)
                         current_node.append_to_msg_labels(msg_Label)
-                        y -= 0.05
-
-
-
-
-
-
-    def stringify_list(self,header):
-        current_node = self.get_head_node()
-        for _ in range(len(previously_contacted)):
-            if current_node.get_header() == header:
-                print(current_node.get_msgs_list())
-            else:
-                current_node = current_node.get_next_node()
-                print('beep')
-
-
-
+                        window_height -= msg_Label.winfo_reqheight() + 20
+                        if window_height < 0:
+                            scrollable_region -= msg_Label.winfo_reqheight()
+                        chat_window.configure(scrollregion=(0, 0, 0, scrollable_region))
+                        chat_window.create_window(( 10,
+                                                   y - msg_Label.winfo_reqheight()),
+                                                  window=msg_Label, anchor='ne')                        #msg_Label.place(y =  y - msg_Label.winfo_reqheight() ,relx = 0.01)
+                        y -= msg_Label.winfo_reqheight() + 20
 
 
 
@@ -287,14 +289,12 @@ def sendMassage(event):
             previously_contacted.insert(0,user_receiving)
             new_node.insert_beginning(msg='0'+chat_entry.get(),header=user_receiving)
             cleint_socket.send(bytes(msg_sent , 'utf8'))
-            new_node.stringify_list(header=user_receiving)
             new_node.showMessages(username = user_receiving)
         else:
             previously_contacted.remove(user_receiving)
             previously_contacted.insert(0, user_receiving)
             new_node.add_new_msg(header= user_receiving,new_msg='0'+chat_entry.get())
             cleint_socket.send(bytes(msg_sent , 'utf8'))
-            new_node.stringify_list(header=user_receiving)
             new_node.showMessages(username =user_receiving)
         chat_entry.delete(0, END)
 
@@ -303,13 +303,11 @@ def receiveMassage(sender, new_msg):
     if  sender not in previously_contacted:
         previously_contacted.insert(0, sender)
         new_node.insert_beginning(header = sender ,msg ='1'+new_msg)
-        new_node.stringify_list(header=sender)
         new_node.showMessages(username = sender)
     else:
         previously_contacted.remove(sender)
         previously_contacted.insert(0, sender)
         new_node.add_new_msg(header=sender, new_msg= '1'+new_msg)
-        new_node.stringify_list(header=sender)
         new_node.showMessages(username = sender)
 
 
@@ -360,7 +358,6 @@ def creatMainWindow():
     searchBox.bind('<KeyRelease>',sendSearchInput)
     left_arrow_button.bind('<Button-1>',left_arrow_button.removeLeftArrowAndSarchBar)
 
-
 def creatChatWindow(event):
     search_result_username.delete('1.0', END)
     search_result_fullname.delete('1.0', END)
@@ -372,22 +369,20 @@ def creatChatWindow(event):
     search_global.place_forget()
     top.geometry("600x800")
     chat_window.propagate(0)
-    chat_window.pack()
+    chat_window.pack(side = BOTTOM)
     bar_label_chat.propagate(0)
-    bar_label_chat.place(relx=0,rely=0)
+    bar_label_chat.pack(side = TOP )
     left_arrow_button_chat.place(relx=0.008, rely=0.25)
     fullname_chat.propagate(0)
     fullname_chat.place(relx = 0.13,rely = 0.25)
     chat_entry_label.propagate(0)
-    chat_entry_label.place(relx=0.01,rely=0.92)
+    chat_window.create_window((279,685), window = chat_entry_label)
     chat_entry.pack(ipadx = 140, ipady = 40,pady =5)
-    send_button.place(relx = 0.9,rely = 0.92)
+    chat_window.create_window((570,685), window = send_button)
+    chat_window.focus_set()
     chat_window.bind("<1>", lambda event: chat_window.focus_set())
-    chat_window.bind("<Left>", lambda event: chat_window.xview_scroll(-1, "units"))
-    chat_window.bind("<Right>", lambda event: chat_window.xview_scroll(1, "units"))
     chat_window.bind("<Up>", lambda event: chat_window.yview_scroll(-1, "units"))
     chat_window.bind("<Down>", lambda event: chat_window.yview_scroll(1, "units"))
-    chat_window.focus_set()
     left_arrow_button_chat.bind('<Button-1>',left_arrow_button_chat.returnToMainWindow)
     chat_entry.bind('<Return>',sendMassage)
     send_button.bind('<Button-1>',sendMassage)
